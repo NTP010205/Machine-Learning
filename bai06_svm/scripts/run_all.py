@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import traceback
 
 
 DANH_SACH = [
@@ -16,11 +17,12 @@ DANH_SACH = [
 
 def main():
     thu_muc_goc = Path(__file__).resolve().parents[1]
+    print("Interpreter:", sys.executable, flush=True)
+    print("Thu muc lam viec:", thu_muc_goc, flush=True)
     cac_csv = ["data/sinh_vien.csv", "data/sinh_vien_mo_rong.csv", "data/hai_vang_trang.csv"]
     thieu = [tep for tep in cac_csv if not (thu_muc_goc / tep).is_file()]
     if thieu:
-        print("LOI: thieu CSV: " + ", ".join(thieu), file=sys.stderr)
-        return 1
+        raise FileNotFoundError("Thieu CSV bat buoc: " + ", ".join(thieu))
     moi_truong = os.environ.copy()
     moi_truong["PYTHONIOENCODING"] = "utf-8"
     moi_truong["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -32,12 +34,15 @@ def main():
             ket_qua = subprocess.run([sys.executable, "-u", tep], cwd=thu_muc_goc,
                                      env=moi_truong, check=False)
         except OSError as loi:
+            traceback.print_exc()
             print(f"LOI {tep}: {loi}", file=sys.stderr, flush=True)
             cac_bai_loi.append(tep)
             continue
         if ket_qua.returncode != 0:
             print(f"LOI {tep}: exit code {ket_qua.returncode}", file=sys.stderr, flush=True)
             cac_bai_loi.append(tep)
+        else:
+            print(f"THANH CONG: {tep} (exit 0)", flush=True)
     if cac_bai_loi:
         print("CAC BAI BI LOI: " + ", ".join(cac_bai_loi), file=sys.stderr)
         return 1
