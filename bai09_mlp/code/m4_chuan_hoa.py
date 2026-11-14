@@ -1,0 +1,46 @@
+# -*- coding: utf-8 -*-
+"""Bước 4: mạng nơ-ron khi quên chuẩn hoá."""
+
+# Cấu hình thực thi cục bộ; giữ nguyên tham số PDF, xem README.
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from cau_hinh_moi_truong import cau_hinh
+cau_hinh()
+# Kết thúc cấu hình; mã mẫu PDF tiếp tục bên dưới.
+
+import pandas as pd
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.neural_network import MLPClassifier
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+df = pd.read_csv( "data/sinh_vien_mo_rong.csv")
+X = df[[ "gio_on", "diem_giua_ky", "chi_tieu"]]
+y = df[ "qua_mon"]
+X_tr, X_te, y_tr, y_te = train_test_split(
+    X, y, test_size= 0.25, random_state= 17, stratify=y
+)
+
+tho = MLPClassifier(hidden_layer_sizes=( 20,), max_iter= 3000,
+                    random_state=0).fit(X_tr, y_tr)
+chuan = make_pipeline(
+    StandardScaler(),
+    MLPClassifier(hidden_layer_sizes=(20,), max_iter= 3000,
+                  random_state=0),
+).fit(X_tr, y_tr)
+
+print(f"Doan bua ca lop qua : {y_te.mean():.4f}" )
+print(f"Khong chuan hoa : "
+      f"{accuracy_score(y_te, tho.predict(X_te)):.4f}" )
+print(f"Co chuan hoa : "
+      f"{accuracy_score(y_te, chuan.predict(X_te)):.4f}" )
+print()
+
+# Mạng không chuẩn hoá đoán ra sao
+du = tho.predict(X_te)
+print("Khong chuan hoa, so ban doan qua:" , du. sum(), "tren", len(du))
+
+# Bổ sung theo yêu cầu: số sinh viên được dự đoán qua khi có chuẩn hóa.
+print("Co chuan hoa, so ban doan qua:", chuan.predict(X_te).sum(), "tren", len(y_te))
